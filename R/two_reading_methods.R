@@ -83,12 +83,31 @@ summarise_batch <- function(data_name) {
           .groups = "drop"
         ) |> 
         mutate(scenario = data_name)
-    }))
+    })) |> 
+    unnest(data_out)
+  
+  
+}
+
+count_labour_cats <- function(data_name) {
+  open_dataset(file.path("out_data", data_name, "combined_data")) |>
+    count(run, time, labourSupplyWeekly) |>
+    collect() |>
+    pivot_wider(names_from = labourSupplyWeekly,
+                values_from = n,
+                names_glue = "labour_{labourSupplyWeekly}") |> 
+    mutate(scenario = data_name)
   
   
 }
 
 
 # Use functions to do this double-reading for each scenario:
+
 baseline_dat1 <- summarise_arrow("baseline_main")
 baseline_dat2 <- summarise_batch("baseline_main")
+baseline_dat3 <- count_labour_cats("baseline_main")
+
+baseline_main_stats <-
+  full_join(baseline_dat1, baseline_dat2, by = c("run", "time")) |>
+  full_join(baseline_dat3, by = c("run", "time"))

@@ -46,6 +46,11 @@ library(furrr)
 
 plan(multisession, workers = 10)
 
+labour_supply_levels <-  c("ZERO" = 0,
+                           "TEN" = 10,
+                           "TWENTY" = 20,
+                           "THIRTY" = 30,
+                           "FORTY" = 40)
 
 t1 <- now()
 median_inc_batched <- runs |>
@@ -56,8 +61,9 @@ median_inc_batched <- runs |>
       "combined_data",
       paste0("run=", run_n)
     )) |>
-      select(time, equivalisedDisposableIncomeYearly, dhm) |>
+      select(time, equivalisedDisposableIncomeYearly, dhm, labourSupplyWeekly) |>
       collect() |>
+      mutate(labourSupplyWeekly = labour_supply_levels[labourSupplyWeekly]) |> 
       group_by(time) |>
       summarise(
         across(
@@ -70,6 +76,10 @@ median_inc_batched <- runs |>
             q_75 = ~ quantile(.x, 0.75)
           )
         ),
+        across(
+          c(labourSupplyWeekly),
+          list(mean = mean)
+        )
       )
   }))
 now() - t1

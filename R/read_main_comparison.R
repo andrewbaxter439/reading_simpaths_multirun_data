@@ -9,17 +9,6 @@ reform_sens <- open_dataset(file.path("out_data", "reform_main", "combined_data"
 
 
 
-labour_supply_levels <-  c("ZERO" = 0,
-                           "TEN" = 10,
-                           "TWENTY" = 20,
-                           "THIRTY" = 30,
-                           "FORTY" = 40)
-
-test_pop <- baseline_main |> head(1000) |> collect()
-
-
-
-
 baseline_means <- baseline_main |> 
   filter(dag >= 18, dag <= 65) |>
   mutate(ghq_case = dhm_ghq,
