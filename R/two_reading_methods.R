@@ -3,7 +3,7 @@ library(tidyverse)
 library(SPHSUgraphs)
 library(furrr)
 
-plan(multisession, workers = 10)
+plan(multisession, workers = 5)
 
 baseline_main <- open_dataset(file.path("out_data", "baseline_main", "combined_data"))
 runs <- baseline_main |> 
@@ -95,7 +95,7 @@ count_labour_cats <- function(data_name) {
     collect() |>
     pivot_wider(names_from = labourSupplyWeekly,
                 values_from = n,
-                names_glue = "labour_{labourSupplyWeekly}") |> 
+                names_glue = "n_labour_{labourSupplyWeekly}") |> 
     mutate(scenario = data_name)
   
   
@@ -111,3 +111,11 @@ baseline_dat3 <- count_labour_cats("baseline_main")
 baseline_main_stats <-
   full_join(baseline_dat1, baseline_dat2, by = c("run", "time")) |>
   full_join(baseline_dat3, by = c("run", "time"))
+
+reform_dat1 <- summarise_arrow("reform_main")
+reform_dat2 <- summarise_batch("reform_main")
+reform_dat3 <- count_labour_cats("reform_main")
+
+reform_main_stats <-
+  full_join(reform_dat1, reform_dat2, by = c("run", "time")) |>
+  full_join(reform_dat3, by = c("run", "time"))
