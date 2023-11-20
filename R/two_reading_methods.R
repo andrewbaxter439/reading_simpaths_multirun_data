@@ -5,7 +5,7 @@ library(furrr)
 
 plan(multisession, workers = 5)
 
-baseline_main <- open_dataset(file.path("out_data", "baseline_main", "combined_data"))
+baseline_main <- open_dataset(file.path("out_data", "reform_main", "combined_data"))
 runs <- baseline_main |> 
   select(run) |> 
   unique() |> 
@@ -109,13 +109,115 @@ baseline_dat2 <- summarise_batch("baseline_main")
 baseline_dat3 <- count_labour_cats("baseline_main")
 
 baseline_main_stats <-
-  full_join(baseline_dat1, baseline_dat2, by = c("run", "time")) |>
-  full_join(baseline_dat3, by = c("run", "time"))
+  full_join(baseline_dat1, baseline_dat2, by = c("run", "time", "scenario")) |>
+  full_join(baseline_dat3, by = c("run", "time", "scenario"))
 
 reform_dat1 <- summarise_arrow("reform_main")
 reform_dat2 <- summarise_batch("reform_main")
 reform_dat3 <- count_labour_cats("reform_main")
 
 reform_main_stats <-
-  full_join(reform_dat1, reform_dat2, by = c("run", "time")) |>
-  full_join(reform_dat3, by = c("run", "time"))
+  full_join(reform_dat1, reform_dat2, by = c("run", "time", "scenario")) |>
+  full_join(reform_dat3, by = c("run", "time", "scenario"))
+
+baseline_main_stats |> 
+  bind_rows(reform_main_stats) |> 
+  ggplot(aes(time, equivalisedDisposableIncomeYearly_median, colour = scenario, fill = scenario)) +
+  geom_vline(aes(xintercept = 2019, linetype = "Covid reform\nimplementation"),
+             colour = "red") +
+  stat_summary(
+    fun.data = median_hilow,
+    geom = "ribbon",
+    alpha = 0.5,
+    colour = NA
+  ) +
+  stat_summary(fun = median, geom = "line") +
+  stat_summary(fun = median, geom = "point") +
+  scale_fill_manual(
+    "Policy:",
+    aesthetics = c("fill", "colour"),
+    breaks = c("baseline_main", "reform_main"),
+    labels = c("Baseline", "Covid policy"),
+    values = sphsu_cols("University Blue", "Rust", names = FALSE)
+  ) +
+  scale_linetype("") +
+  xlab("Year") +
+  scale_y_continuous(
+    "Median disposable income",
+    labels = scales::dollar_format(prefix = "£")
+  ) +
+  labs(
+    caption = paste(
+      "Notes:",
+      "1,000 simulation runs in each condition.",
+      "Red line denotes reform implementation point",
+      sep = "\n"
+    )
+  ) +
+  theme_sphsu_light() +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0))
+
+
+
+# sensitivity -------------------------------------------------------------
+
+
+
+baseline_dat_sens1 <- summarise_arrow("baseline_sens")
+baseline_dat_sens2 <- summarise_batch("baseline_sens")
+baseline_dat_sens3 <- count_labour_cats("baseline_sens")
+
+reform_dat_sens1 <- summarise_arrow("reform_sens")
+reform_dat_sens2 <- summarise_batch("reform_sens")
+reform_dat_sens3 <- count_labour_cats("reform_sens")
+
+
+
+baseline_sens_stats <-
+  full_join(baseline_dat_sens1, baseline_dat_sens2, by = c("run", "time", "scenario")) |>
+  full_join(baseline_dat_sens3, by = c("run", "time", "scenario"))
+
+reform_sens_stats <-
+  full_join(reform_dat_sens1, reform_dat_sens2, by = c("run", "time", "scenario")) |>
+  full_join(reform_dat_sens3, by = c("run", "time", "scenario"))
+
+
+
+baseline_sens_stats |> 
+  bind_rows(reform_sens_stats) |> 
+  ggplot(aes(time, equivalisedDisposableIncomeYearly_median, colour = scenario, fill = scenario)) +
+  geom_vline(aes(xintercept = 2019, linetype = "Covid reform\nimplementation"),
+             colour = "red") +
+  stat_summary(
+    fun.data = median_hilow,
+    geom = "ribbon",
+    alpha = 0.5,
+    colour = NA
+  ) +
+  stat_summary(fun = median, geom = "line") +
+  stat_summary(fun = median, geom = "point") +
+  scale_fill_manual(
+    "Policy:",
+    aesthetics = c("fill", "colour"),
+    breaks = c("baseline_sens", "reform_sens"),
+    labels = c("Baseline", "Covid policy"),
+    values = sphsu_cols("University Blue", "Rust", names = FALSE)
+  ) +
+  scale_linetype("") +
+  xlab("Year") +
+  scale_y_continuous(
+    "Median disposable income",
+    labels = scales::dollar_format(prefix = "£")
+  ) +
+  labs(
+    caption = paste(
+      "Notes:",
+      "1,000 simulation runs in each condition.",
+      "Red line denotes reform implementation point",
+      sep = "\n"
+    )
+  ) +
+  theme_sphsu_light() +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0))
